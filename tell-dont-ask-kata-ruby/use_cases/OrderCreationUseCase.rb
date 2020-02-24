@@ -1,4 +1,5 @@
 require_relative "UnknownProductError"
+require_relative "../models/Order"
 
 class OrderCreationUseCase
 
@@ -19,22 +20,29 @@ class OrderCreationUseCase
         )
 
         request.requests.each do | item_request |
-            product = get_product(:item_request => item_request)
-            order_item = product.construct_order_item(:item_quantity => item_request.quantity)
+            product = @product_catalog.find_by_name(:name => item_request.product_name)
 
-            order.add_item(:order_item => order_item)
+            if (product.nil?)
+                raise UnknownProductError.new()
+            else
+                unitary_tax = (product.price / 100.0 * product.category.tax_percentage).round(2)
+                unitary_taxed_amount = (product.price + unitary_tax).round(2)
+                taxed_amount = (unitary_taxed_amount * item_request.quantity).round(2)
+                tax_amount = (unitary_tax * item_request.quantity)
+
+                order_item = OrderItem.new(
+                    :product => product,
+                    :quantity => item_request.quantity,
+                    :tax => tax_amount,
+                    :taxed_amount => taxed_amount,
+                )
+
+                order.items << order_item
+                order.total += taxed_amount
+                order.tax += tax_amount
+            end
         end
 
         @order_database.save(:order => order)
-    end
-
-    def get_product(item_request:)
-        product = @product_catalog.find_by_name(:name => item_request.product_name)
-
-        if (product.nil?)
-            raise UnknownProductError.new()
-        end
-
-        return product
     end
 end

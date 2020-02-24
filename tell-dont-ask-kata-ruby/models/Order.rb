@@ -10,10 +10,4 @@ class Order
         @id = id
     end
 
-    def add_item(order_item:)
-        @items << order_item
-        @total = total + order_item.taxed_amount
-        @tax = tax + order_item.tax
-    end
-
 end

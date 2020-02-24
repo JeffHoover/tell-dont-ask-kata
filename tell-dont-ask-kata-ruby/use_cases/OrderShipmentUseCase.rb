@@ -26,7 +26,7 @@ class OrderShipmentUseCase
 
     shipment_service.ship(:order => order)
 
-    order.status = (OrderStatus::SHIPPED)
+    order.status = OrderStatus::SHIPPED
     @order_database.save(:order => order)
   end
 
